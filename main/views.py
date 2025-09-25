@@ -13,11 +13,13 @@ import numpy as np
 YOUTUBE_API_KEY = 'AIzaSyCt8o0RjUnvbzwVQUuKhj9E1sa8glhKgdU' 
 MODEL_PATH = 'xgb_trending_model.pkl'
 PIPELINE_PATH = 'xgb_pipeline.pkl'
+FEATURES_PATH = 'selected_features.txt'
 
 def extract_video_id(url):
     """Extract video ID from YouTube URL"""
+    # Hỗ trợ cả shorts: https://www.youtube.com/shorts/<id>
     patterns = [
-        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([^&\n?#\/]+)',
         r'youtube\.com\/watch\?.*v=([^&\n?#]+)'
     ]
     
@@ -314,6 +316,16 @@ def extract_features(info):
         'commentCount': comment_count
     }
 
+def load_model_bundle():
+    """Load trained model, scaler and selected feature names."""
+    if not (os.path.exists(MODEL_PATH) and os.path.exists(PIPELINE_PATH) and os.path.exists(FEATURES_PATH)):
+        return None, None, None
+    model = joblib.load(MODEL_PATH)
+    scaler = joblib.load(PIPELINE_PATH)
+    with open(FEATURES_PATH, 'r', encoding='utf-8') as f:
+        selected_features = [line.strip() for line in f if line.strip()]
+    return model, scaler, selected_features
+
 def index(request):
     """Dashboard view with real YouTube data"""
     # Get dashboard data using fixed API key
@@ -347,63 +359,86 @@ def predict(request):
                     error = "Không thể lấy thông tin video. Kiểm tra lại API key và URL"
                 else:
                     try:
-                        # Load model and pipeline
-                        if os.path.exists(MODEL_PATH) and os.path.exists(PIPELINE_PATH):
-                            model = joblib.load(MODEL_PATH)
-                            scaler = joblib.load(PIPELINE_PATH)
-                            
+                        model, scaler, selected_features = load_model_bundle()
+                        if not (model and scaler and selected_features):
+                            error = "Model chưa được huấn luyện đầy đủ (model/scaler/features). Vui lòng chạy train_xgboost.py trước"
+                        else:
                             # Extract features
-                            features = extract_features(video_info)
-                            if features:
-                                # Prepare feature array
-                                feature_array = np.array([
-                                    features['title_len'],
-                                    features['desc_len'],
-                                    features['desc_words'],
-                                    features['tag_count'],
-                                    features['categoryId'],
-                                    features['viewCount'],
-                                    features['likeCount'],
-                                    features['commentCount']
-                                ]).reshape(1, -1)
+                            raw = extract_features(video_info)
+                            if raw:
+                                # Sắp xếp features đúng thứ tự đã dùng khi train
+                                vector = [raw.get(name, 0) for name in selected_features]
+                                arr = np.array(vector, dtype=float).reshape(1, -1)
+                                # Scale & predict
+                                arr_scaled = scaler.transform(arr)
+                                proba = float(model.predict_proba(arr_scaled)[0][1]) if hasattr(model, 'predict_proba') else float(model.predict(arr_scaled)[0])
+                                pred = int(proba >= 0.5)
+                                score = int(proba * 100)
+
                                 
-                                # Scale features
-                                features_scaled = scaler.transform(feature_array)
-                                
-                                # Make prediction
-                                prediction = model.predict(features_scaled)[0]
-                                probability = model.predict_proba(features_scaled)[0][1]
-                                
-                                # Calculate score (0-100)
-                                score = int(probability * 100)
-                                
-                                # Determine reason and suggestion
-                                reason = "Dựa trên phân tích các yếu tố của video"
-                                suggestion = None
-                                
-                                if features['viewCount'] < 10000:
-                                    reason = "Lượt xem thấp - video cần thêm thời gian để phát triển"
-                                    suggestion = "Tăng cường quảng bá video trên các nền tảng mạng xã hội"
-                                elif features['likeCount'] < 1000:
-                                    reason = "Tỷ lệ like thấp - nội dung cần cải thiện"
-                                    suggestion = "Tối ưu hóa thumbnail và tiêu đề để tăng engagement"
-                                elif features['commentCount'] < 100:
-                                    reason = "Tương tác comment thấp - cần tạo nội dung gây tranh luận"
-                                    suggestion = "Thêm câu hỏi hoặc chủ đề thảo luận vào video"
-                                elif score >= 70:
-                                    reason = "Video có tiềm năng trending cao với các chỉ số tốt"
-                                    suggestion = "Tiếp tục duy trì chất lượng nội dung"
-                                
+                                ups_list = []
+                                downs_list = []
+                                # viewCount
+                                if 'viewCount' in raw:
+                                    v = raw['viewCount']
+                                    if v >= 100000:
+                                        ups_list.append('Lượt xem cao (>=100K)')
+                                    elif v < 10000:
+                                        downs_list.append('Lượt xem thấp (<10K)')
+                                # likeCount ratio
+                                if 'likeCount' in raw and 'viewCount' in raw:
+                                    like_rate = (raw['likeCount'] / max(raw['viewCount'], 1)) * 100
+                                    if like_rate >= 5:
+                                        ups_list.append(f'Tỷ lệ like tốt (~{like_rate:.1f}%)')
+                                    elif like_rate < 1:
+                                        downs_list.append(f'Tỷ lệ like thấp (~{like_rate:.1f}%)')
+                                # commentCount ratio
+                                if 'commentCount' in raw and 'viewCount' in raw:
+                                    cmt_rate = (raw['commentCount'] / max(raw['viewCount'], 1)) * 100
+                                    if cmt_rate >= 1:
+                                        ups_list.append(f'Tỷ lệ bình luận tốt (~{cmt_rate:.2f}%)')
+                                    elif cmt_rate < 0.1:
+                                        downs_list.append(f'Tỷ lệ bình luận thấp (~{cmt_rate:.2f}%)')
+                                # tag_count
+                                if 'tag_count' in raw:
+                                    t = raw['tag_count']
+                                    if t >= 10:
+                                        ups_list.append('Nhiều thẻ tag (>=10)')
+                                    elif t <= 2:
+                                        downs_list.append('Ít thẻ tag (<=2)')
+                                # title_len
+                                if 'title_len' in raw:
+                                    tl = raw['title_len']
+                                    if 20 <= tl <= 70:
+                                        ups_list.append('Tiêu đề độ dài hợp lý (20-70)')
+                                    elif tl < 15:
+                                        downs_list.append('Tiêu đề quá ngắn (<15)')
+                                    elif tl > 100:
+                                        downs_list.append('Tiêu đề quá dài (>100)')
+                                # desc_words
+                                if 'desc_words' in raw:
+                                    dw = raw['desc_words']
+                                    if dw >= 50:
+                                        ups_list.append('Mô tả chi tiết (>=50 từ)')
+                                    elif dw < 10:
+                                        downs_list.append('Mô tả sơ sài (<10 từ)')
+
+                                ups_list = ups_list[:3]
+                                downs_list = downs_list[:3]
+                                parts = []
+                                if ups_list:
+                                    parts.append('Tăng xác suất: ' + ', '.join(ups_list))
+                                if downs_list:
+                                    parts.append('Giảm xác suất: ' + ', '.join(downs_list))
+                                reasons_text = '; '.join(parts) if parts else 'Dựa trên các chỉ số tương tác và nội dung'
+
                                 result = {
                                     'score': score,
-                                    'probability': f"{probability:.1%}",
-                                    'reason': reason,
-                                    'suggestion': suggestion
+                                    'probability': f"{proba:.1%}",
+                                    'reason': reasons_text
                                 }
                             else:
                                 error = "Không thể xử lý thông tin video"
-                        else:
-                            error = "Model chưa được huấn luyện. Vui lòng chạy train_xgboost.py trước"
                     except Exception as e:
                         error = f"Lỗi dự đoán: {str(e)}"
     

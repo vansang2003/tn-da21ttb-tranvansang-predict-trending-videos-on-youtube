@@ -1,0 +1,3 @@
+viewCount
+likeCount
+commentCount

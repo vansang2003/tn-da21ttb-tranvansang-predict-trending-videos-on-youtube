@@ -12,7 +12,7 @@
     </div>
 </section>
 
-<div class="max-w-3xl">
+<div class="max-w-5xl mx-auto px-4">
     <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6">
         {% if error %}
         <div class="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 p-3 text-sm">
@@ -28,10 +28,10 @@
                        value="{{ request.POST.url }}"
                        class="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-600/50" />
                 <button type="submit" id="submitBtn"
-                        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-5 py-3 font-semibold shadow-lg shadow-fuchsia-600/20 hover:shadow-indigo-600/30 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-5 py-3 font-semibold text-center leading-none shadow-lg shadow-fuchsia-600/20 hover:shadow-indigo-600/30 transition">
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
                         <path d="M12 4v16m8-8H4" />
-                    </svg>
+                    </svg> -->
                     Phân tích
                 </button>
             </div>
@@ -68,15 +68,6 @@
     <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
-                <div>
-                    <div class="flex items-center justify-between mb-2 text-sm text-slate-300">
-                        <span>Điểm số trending</span>
-                        <span class="text-2xl font-extrabold text-white">{{ result.score }}%</span>
-                    </div>
-                    <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-indigo-500" style="width: {{ result.score }}%"></div>
-                    </div>
-                </div>
                 <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center justify-between">
                     <span class="text-sm text-slate-300">Xác suất trending</span>
                     <span class="text-xl font-bold text-white">{{ result.probability }}</span>
@@ -87,16 +78,11 @@
                     <h4 class="font-semibold mb-1">Lý do</h4>
                     <p class="text-sm text-slate-300">{{ result.reason }}</p>
                 </div>
-                {% if result.suggestion %}
-                <div class="rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-3">
-                    <h4 class="font-semibold mb-1">Gợi ý cải thiện</h4>
-                    <p class="text-sm">{{ result.suggestion }}</p>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
     {% endif %}
+
 </div>
 
 <script>
