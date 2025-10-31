@@ -18,15 +18,21 @@
 <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
     {% for v in videos %}
     <article class="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur hover:bg-white/[0.08] transition">
-        <div class="aspect-video overflow-hidden bg-black/20">
-            <img 
-                src="{{ v.thumbnails.high.url|default:v.thumbnails.medium.url|default:v.thumbnails.default.url }}" 
-                alt="{{ v.title }}" 
-                class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-        </div>
+        <a href="https://www.youtube.com/watch?v={{ v.id }}" target="_blank" rel="noopener noreferrer" class="block">
+            <div class="aspect-video overflow-hidden bg-black/20">
+                <img 
+                    src="{{ v.thumbnails.high.url|default:v.thumbnails.medium.url|default:v.thumbnails.default.url }}" 
+                    alt="{{ v.title }}" 
+                    class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+            </div>
+        </a>
         <div class="p-4 space-y-3">
             <div class="flex items-start justify-between gap-3">
-                <h3 class="font-semibold leading-snug line-clamp-2">{{ v.title }}</h3>
+                <h3 class="font-semibold leading-snug line-clamp-2">
+                    <a href="https://www.youtube.com/watch?v={{ v.id }}" target="_blank" rel="noopener noreferrer" class="hover:underline">
+                        {{ v.title }}
+                    </a>
+                </h3>
                 <span class="shrink-0 rounded-md bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-400/20 px-2 py-0.5 text-xs">#{{ forloop.counter }}</span>
             </div>
             <div class="text-sm text-slate-300">Kênh: <span class="font-medium text-white/90">{{ v.channel }}</span></div>
@@ -46,7 +52,7 @@
             </div>
             <div class="flex items-center justify-between text-xs text-slate-400">
                 <div>Category: <span class="text-slate-300">{{ v.categoryId }}</span></div>
-                <div>Ngày: <span class="text-slate-300">{{ v.publishedAt|date:'d/m/Y' }}</span></div>
+                <!-- <div>Ngày: <span class="text-slate-300">{{ v.publishedAt|date:'d/m/Y' }}</span></div> -->
             </div>
             {% if v.description %}
             <p class="text-sm text-slate-300/90 line-clamp-2">{{ v.description }}</p>

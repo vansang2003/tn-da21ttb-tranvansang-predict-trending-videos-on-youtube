@@ -108,4 +108,3 @@ with open(FEATURES_PATH, 'w', encoding='utf-8') as f:
     f.write('\n'.join(selected_features))
 print(f'Đã lưu mô hình tại: {MODEL_PATH}')
 print(f'Đã lưu scaler tại: {SCALER_PATH}')
-print(f'Đã lưu danh sách đặc trưng tại: {FEATURES_PATH}')
