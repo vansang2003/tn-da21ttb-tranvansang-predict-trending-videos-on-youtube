@@ -431,7 +431,7 @@ def predict(request):
                                 if downs_list:
                                     parts.append('Giảm xác suất: ' + ', '.join(downs_list))
                                 reasons_text = '; '.join(parts) if parts else 'Dựa trên các chỉ số tương tác và nội dung'
-
+                                
                                 result = {
                                     'score': score,
                                     'probability': f"{proba:.1%}",
@@ -509,9 +509,9 @@ def account(request):
 
 def dashboard_csv_data(request):
     """Serve aggregated analytics from local CSV for rich charts"""
-    csv_path = os.path.join('data', 'data_youtube_trending_video.csv')
+    csv_path = os.path.join('data', 'youtube_trending_data_processed.csv')
     if not os.path.exists(csv_path):
-        # Fallback to path used in training script
+        # Fallback for older file name
         alt_path = os.path.join('data', 'data_youtube_trending_video.csv')
         csv_path = alt_path
     try:
@@ -529,11 +529,7 @@ def dashboard_csv_data(request):
         if 'tags' not in df.columns:
             df['tags'] = ''
 
-        # Top categories by count
-        cat_counts = df['categoryId'].astype(str).value_counts().head(12)
-        categories = [{'name': k, 'value': int(v)} for k, v in cat_counts.items()]
-
-        # Total metrics
+        # Basic totals
         totals = {
             'views': int(df['viewCount'].sum()),
             'likes': int(df['likeCount'].sum()),
@@ -541,48 +537,196 @@ def dashboard_csv_data(request):
             'videos': int(len(df))
         }
 
-        # Like/Comment vs View scatter sample (limit for performance)
+        # View stats
+        view_stats = {
+            'mean': float(df['viewCount'].mean()) if len(df) else 0.0,
+            'median': float(df['viewCount'].median()) if len(df) else 0.0,
+            'min': int(df['viewCount'].min()) if len(df) else 0,
+            'max': int(df['viewCount'].max()) if len(df) else 0,
+            'over1m': int((df['viewCount'] > 1_000_000).sum()),
+        }
+
+        # Histogram for viewCount
+        hist_bins = [0, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+        hist_labels = ['<1K', '1K-10K', '10K-100K', '100K-1M', '1M-10M', '10M-100M']
+        df['view_bin'] = pd.cut(df['viewCount'], bins=hist_bins, labels=hist_labels, include_lowest=True)
+        hist_counts = df['view_bin'].value_counts().reindex(hist_labels, fill_value=0)
+        histogram = {
+            'bins': hist_labels,
+            'counts': hist_counts.astype(int).tolist()
+        }
+
+        # Correlation view-like
+        corr_val = 0.0
+        if df['viewCount'].std() > 0 and df['likeCount'].std() > 0:
+            corr_val = float(df['viewCount'].corr(df['likeCount']))
+
+        # Scatter sample view vs like
         sample = df.sample(min(1000, len(df)), random_state=42) if len(df) > 0 else df
-        scatter = sample[['viewCount', 'likeCount', 'commentCount']].fillna(0).astype(int)
-        scatter_points = scatter.apply(lambda r: [int(r['viewCount']), int(r['likeCount']), int(r['commentCount'])], axis=1).tolist()
+        scatter_df = sample[['viewCount', 'likeCount']].fillna(0)
+        scatter_points = scatter_df.apply(lambda r: [int(r['viewCount']), int(r['likeCount'])], axis=1).tolist()
 
-        # Top videos by views
-        top_videos_df = df.sort_values('viewCount', ascending=False).head(20)
-        top_videos = {
-            'titles': top_videos_df['title'].astype(str).tolist(),
-            'views': top_videos_df['viewCount'].astype(int).tolist(),
-            'likes': top_videos_df['likeCount'].astype(int).tolist(),
-            'comments': top_videos_df['commentCount'].astype(int).tolist()
+        # Category distribution with name mapping
+        CATEGORY_NAMES = {
+            '1': 'Phim & Hoạt hình',
+            '2': 'Xe cộ',
+            '10': 'Âm nhạc',
+            '15': 'Thú cưng & Động vật',
+            '17': 'Thể thao',
+            '19': 'Du lịch & Sự kiện',
+            '20': 'Trò chơi',
+            '22': 'Con người & Blog',
+            '23': 'Hài kịch',
+            '24': 'Giải trí',
+            '25': 'Tin tức & Chính trị',
+            '26': 'Hướng dẫn & Phong cách',
+            '27': 'Giáo dục',
+            '28': 'Khoa học & Công nghệ',
+            '29': 'Phi lợi nhuận & Hoạt động',
+            '30': 'Phim',
+            '31': 'Anime/Animation',
+            '32': 'Hành động/Phiêu lưu',
+            '33': 'Cổ điển',
+            '34': 'Hài kịch',
+            '35': 'Tài liệu',
+            '36': 'Drama',
+            '37': 'Gia đình',
+            '38': 'Nước ngoài',
+            '39': 'Kinh dị',
+            '40': 'Khoa học viễn tưởng',
+            '41': 'Kịch tính',
+            '42': 'Shorts',
+            '43': 'Chương trình',
+            '44': 'Trailer',
         }
+        cat_counts = df['categoryId'].astype(str).value_counts().head(12)
+        categories = []
+        for cat_id, count in cat_counts.items():
+            cat_name = CATEGORY_NAMES.get(cat_id, f'Danh mục {cat_id}')
+            categories.append({
+                'id': cat_id,
+                'name': cat_name,
+                'value': int(count)
+            })
 
-        # Word cloud data from tags
-        def tag_split(s):
-            return [t.strip() for t in str(s).split(',') if t.strip()]
-        all_tags = []
-        df['tags'].apply(lambda s: all_tags.extend(tag_split(s)))
-        tag_series = pd.Series(all_tags)
-        tag_counts = tag_series.value_counts().head(100) if not tag_series.empty else pd.Series(dtype=int)
-        word_cloud = [{'name': k, 'value': int(v)} for k, v in tag_counts.items()]
+        # PublishedAt analysis - time of day and day of week
+        published_time_data = {'hours': {}, 'weekdays': {}}
+        if 'publishedAt' in df.columns:
+            try:
+                df['publishedAt'] = pd.to_datetime(df['publishedAt'], errors='coerce')
+                df_pub = df.dropna(subset=['publishedAt'])
+                if len(df_pub) > 0:
+                    # Extract hour and weekday
+                    df_pub['hour'] = df_pub['publishedAt'].dt.hour
+                    df_pub['weekday'] = df_pub['publishedAt'].dt.dayofweek
+                    weekday_names = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
+                    
+                    # Average views by hour
+                    hour_views = df_pub.groupby('hour')['viewCount'].mean().to_dict()
+                    published_time_data['hours'] = {str(h): float(v) for h, v in sorted(hour_views.items())}
+                    
+                    # Average views by weekday
+                    weekday_views = df_pub.groupby('weekday')['viewCount'].mean().to_dict()
+                    published_time_data['weekdays'] = {weekday_names[w]: float(weekday_views.get(w, 0)) for w in range(7)}
+            except Exception as e:
+                print(f"Error processing publishedAt: {e}")
 
-        # Engagement rate by bins of views
-        bins = [0, 1_000, 10_000, 100_000, 1_000_000, 10_000_000]
-        labels = ['<1K', '1K-10K', '10K-100K', '100K-1M', '1M-10M']
-        df['view_bin'] = pd.cut(df['viewCount'], bins=bins, labels=labels, include_lowest=True)
-        grp = df.groupby('view_bin').agg({'likeCount':'mean','commentCount':'mean','viewCount':'count'}).reindex(labels)
-        engagement_by_bin = {
-            'bins': labels,
-            'avgLikes': [float(x) if pd.notna(x) else 0.0 for x in grp['likeCount'].tolist()],
-            'avgComments': [float(x) if pd.notna(x) else 0.0 for x in grp['commentCount'].tolist()],
-            'counts': [int(x) if pd.notna(x) else 0 for x in grp['viewCount'].tolist()]
-        }
+        # Duration analysis
+        duration_data = {'distribution': [], 'vs_views': []}
+        if 'duration' in df.columns:
+            try:
+                import re
+                def parse_duration(dur_str):
+                    """Parse ISO 8601 duration (PT4M13S) to seconds"""
+                    if pd.isna(dur_str) or not dur_str:
+                        return None
+                    dur_str = str(dur_str).upper()
+                    match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', dur_str)
+                    if not match:
+                        return None
+                    hours = int(match.group(1) or 0)
+                    minutes = int(match.group(2) or 0)
+                    seconds = int(match.group(3) or 0)
+                    return hours * 3600 + minutes * 60 + seconds
+                
+                df['duration_sec'] = df['duration'].apply(parse_duration)
+                df_dur = df.dropna(subset=['duration_sec', 'viewCount'])
+                
+                if len(df_dur) > 0:
+                    # Duration distribution bins
+                    dur_bins = [0, 60, 180, 300, 600, 1800, 3600, float('inf')]
+                    dur_labels = ['<1 phút', '1-3 phút', '3-5 phút', '5-10 phút', '10-30 phút', '30-60 phút', '>60 phút']
+                    df_dur['dur_bin'] = pd.cut(df_dur['duration_sec'], bins=dur_bins, labels=dur_labels, include_lowest=True)
+                    dur_dist = df_dur['dur_bin'].value_counts().reindex(dur_labels, fill_value=0)
+                    duration_data['distribution'] = [{'name': label, 'value': int(count)} for label, count in dur_dist.items()]
+                    
+                    # Duration vs Views scatter (sample)
+                    sample_dur = df_dur.sample(min(1000, len(df_dur)), random_state=42)
+                    duration_data['vs_views'] = sample_dur[['duration_sec', 'viewCount']].apply(
+                        lambda r: [int(r['duration_sec']), int(r['viewCount'])], axis=1
+                    ).tolist()
+            except Exception as e:
+                print(f"Error processing duration: {e}")
+
+        # Top 10 videos by views - from local dataset only
+        top_videos = []
+        try:
+            df_top = df.sort_values('viewCount', ascending=False).head(10)
+            for _, row in df_top.iterrows():
+                top_videos.append({
+                    'title': str(row.get('title', 'Unknown Title'))[:120],
+                    'channel': str(row.get('channelTitle', row.get('channel', 'Unknown Channel')))[:60],
+                    'viewCount': int(row.get('viewCount', 0)),
+                    'likeCount': int(row.get('likeCount', 0)),
+                    'commentCount': int(row.get('commentCount', 0)),
+                })
+        except Exception as e:
+            print(f"Error computing top videos from dataset: {e}")
+            top_videos = []
+
+        # Word cloud from whole dataset (tags + title)
+        word_cloud_data = []
+        try:
+            import re
+            from collections import Counter
+            df_keywords = df.copy()
+
+            # Extract words from tags and titles
+            all_words = []
+            for _, row in df_keywords.iterrows():
+                # Tags
+                tags_str = str(row.get('tags', ''))
+                if tags_str and tags_str != 'nan':
+                    tags = [t.strip().lower() for t in tags_str.split(',') if t.strip()]
+                    all_words.extend(tags)
+                
+                # Title words (remove common words)
+                title = str(row.get('title', ''))
+                if title and title != 'nan':
+                    words = re.findall(r'\b[a-z]{3,}\b', title.lower())
+                    all_words.extend(words)
+            
+            # Count and filter
+            word_counts = Counter(all_words)
+            # Remove very common words
+            stop_words = {'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'she', 'use', 'her', 'many', 'some', 'time', 'very', 'when', 'come', 'here', 'just', 'like', 'long', 'make', 'much', 'over', 'such', 'take', 'than', 'them', 'well', 'were', 'what', 'with', 'your', 'this', 'that', 'from', 'have', 'been', 'more', 'will', 'about', 'into', 'their', 'there', 'these', 'would', 'other', 'which', 'could', 'should', 'after', 'before', 'during', 'while', 'where', 'every', 'first', 'second', 'third', 'video', 'videos', 'watch', 'youtube', 'channel', 'subscribe', 'click', 'link'}
+            filtered_words = {word: count for word, count in word_counts.items() if word not in stop_words and len(word) > 2}
+            word_cloud_data = [{'name': word, 'value': count} for word, count in sorted(filtered_words.items(), key=lambda x: x[1], reverse=True)[:100]]
+        except Exception as e:
+            print(f"Error generating word cloud: {e}")
+            word_cloud_data = []
 
         return JsonResponse({
             'totals': totals,
-            'categories': categories,
+            'viewStats': view_stats,
+            'histogram': histogram,
+            'correlation': corr_val,
             'scatter': scatter_points,
+            'categories': categories,
+            'publishedTime': published_time_data,
+            'duration': duration_data,
             'topVideos': top_videos,
-            'wordCloud': word_cloud,
-            'engagementByBin': engagement_by_bin
+            'wordCloud': word_cloud_data,
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

@@ -21,24 +21,24 @@
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6" id="statCards">
         <div class="rounded-2xl bg-gradient-to-br from-fuchsia-600/20 to-indigo-600/20 border border-white/10 p-5">
-            <div class="text-sm text-slate-300">Tổng Views</div>
-            <div class="mt-2 text-2xl font-bold" id="totalViews">—</div>
-            <div class="mt-1 text-xs text-slate-400">từ toàn bộ video</div>
+            <div class="text-sm text-slate-300">View trung bình</div>
+            <div class="mt-2 text-2xl font-bold" id="viewMean">—</div>
+            <div class="mt-1 text-xs text-slate-400">Câu hỏi 1: phân phối lượt xem</div>
         </div>
         <div class="rounded-2xl bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-white/10 p-5">
-            <div class="text-sm text-slate-300">Tổng Likes</div>
-            <div class="mt-2 text-2xl font-bold" id="totalLikes">—</div>
-            <div class="mt-1 text-xs text-slate-400">chỉ số tương tác</div>
+            <div class="text-sm text-slate-300">View trung vị</div>
+            <div class="mt-2 text-2xl font-bold" id="viewMedian">—</div>
+            <div class="mt-1 text-xs text-slate-400">Giá trị median</div>
         </div>
         <div class="rounded-2xl bg-gradient-to-br from-cyan-600/20 to-sky-600/20 border border-white/10 p-5">
-            <div class="text-sm text-slate-300">Tổng Comments</div>
-            <div class="mt-2 text-2xl font-bold" id="totalComments">—</div>
-            <div class="mt-1 text-xs text-slate-400">thảo luận của người xem</div>
+            <div class="text-sm text-slate-300">View cao nhất</div>
+            <div class="mt-2 text-2xl font-bold" id="viewMax">—</div>
+            <div class="mt-1 text-xs text-slate-400">Giá trị max</div>
         </div>
         <div class="rounded-2xl bg-gradient-to-br from-amber-600/20 to-rose-600/20 border border-white/10 p-5">
-            <div class="text-sm text-slate-300">Số Video</div>
-            <div class="mt-2 text-2xl font-bold" id="totalVideos">—</div>
-            <div class="mt-1 text-xs text-slate-400">bản ghi trong CSV</div>
+            <div class="text-sm text-slate-300">Video > 1M views</div>
+            <div class="mt-2 text-2xl font-bold" id="viewOver1m">—</div>
+            <div class="mt-1 text-xs text-slate-400">Số lượng video</div>
         </div>
     </div>
 </section>
@@ -54,15 +54,8 @@
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Top video theo Views</h2>
-                <span class="text-xs text-slate-400">Cột nhóm</span>
-            </div>
-            <div id="barTopVideos" class="h-[420px] mt-2"></div>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Likes & Comments theo dải Views</h2>
-                <span class="text-xs text-slate-400">Stacked Bar</span>
+                <h2 class="font-semibold">Phân phối lượt xem (ViewCount)</h2>
+                <span class="text-xs text-slate-400">Câu hỏi 1</span>
             </div>
             <div id="barEngagementBin" class="h-[360px] mt-2"></div>
         </div>
@@ -71,25 +64,71 @@
     <div class="space-y-6">
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Tỷ trọng danh mục</h2>
+                <h2 class="font-semibold">Tỷ lệ video thịnh hành theo thể loại</h2>
                 <span class="text-xs text-slate-400">Biểu đồ tròn</span>
             </div>
             <div id="pieCategories" class="h-[360px] mt-2"></div>
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Phân tán Like-View-Comment</h2>
-                <span class="text-xs text-slate-400">Scatter 3D 2D</span>
+                <h2 class="font-semibold">Mối quan hệ View - Like</h2>
+                <span class="text-xs text-slate-400" id="corrLabel">Hệ số tương quan</span>
             </div>
             <div id="scatterEngagement" class="h-[360px] mt-2"></div>
         </div>
+    </div>
+</section>
+
+<section class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 space-y-6">
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold">Từ khóa nổi bật</h2>
-                <span class="text-xs text-slate-400">Word Cloud</span>
+                <h2 class="font-semibold">Thời gian đăng video theo giờ</h2>
+                <span class="text-xs text-slate-400">Lượt xem trung bình</span>
             </div>
-            <div id="wordCloud" class="h-[360px] mt-2"></div>
+            <div id="barPublishedHour" class="h-[360px] mt-2"></div>
         </div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">Thời gian đăng video theo ngày trong tuần</h2>
+                <span class="text-xs text-slate-400">Lượt xem trung bình</span>
+            </div>
+            <div id="barPublishedWeekday" class="h-[360px] mt-2"></div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">Ảnh hưởng độ dài video đến lượt xem</h2>
+                <span class="text-xs text-slate-400">Scatter plot</span>
+            </div>
+            <div id="scatterDurationViews" class="h-[360px] mt-2"></div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">Phân bố thời lượng video</h2>
+                <span class="text-xs text-slate-400">Histogram</span>
+            </div>
+            <div id="barDurationDist" class="h-[360px] mt-2"></div>
+        </div>
+    </div>
+</section>
+
+<section class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold">Top 10 video có lượt xem cao nhất</h2>
+            <span class="text-xs text-slate-400">Từ tập dữ liệu</span>
+        </div>
+        <div id="barTopVideos" class="h-[500px] mt-2"></div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold">Từ khóa nổi bật</h2>
+            <span class="text-xs text-slate-400">Word Cloud</span>
+        </div>
+        <div id="wordCloud" class="h-[500px] mt-2"></div>
     </div>
 </section>
 
@@ -100,7 +139,7 @@
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 animate-pulse"></div>
                 <div>
                     <div class="font-semibold">Nguồn dữ liệu</div>
-                    <div class="text-xs text-slate-400">Đọc từ file CSV: data/data_youtube_trending_video.csv</div>
+                    <div class="text-xs text-slate-400">Đọc từ file CSV: data/youtube_trending_data_processed.csv</div>
                 </div>
             </div>
             <!-- <a href="/du-lieu/" class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2 text-sm transition">Xem chi tiết dữ liệu</a> -->
@@ -133,8 +172,12 @@ const charts = {
     barCategories: null,
     pieCategories: null,
     scatterEngagement: null,
+    barDistribution: null,
+    barPublishedHour: null,
+    barPublishedWeekday: null,
+    scatterDurationViews: null,
+    barDurationDist: null,
     barTopVideos: null,
-    barEngagementBin: null,
     wordCloud: null,
 };
 
@@ -142,16 +185,20 @@ function initCharts() {
     charts.barCategories = echarts.init(document.getElementById('barCategories'));
     charts.pieCategories = echarts.init(document.getElementById('pieCategories'));
     charts.scatterEngagement = echarts.init(document.getElementById('scatterEngagement'));
+    charts.barDistribution = echarts.init(document.getElementById('barEngagementBin'));
+    charts.barPublishedHour = echarts.init(document.getElementById('barPublishedHour'));
+    charts.barPublishedWeekday = echarts.init(document.getElementById('barPublishedWeekday'));
+    charts.scatterDurationViews = echarts.init(document.getElementById('scatterDurationViews'));
+    charts.barDurationDist = echarts.init(document.getElementById('barDurationDist'));
     charts.barTopVideos = echarts.init(document.getElementById('barTopVideos'));
-    charts.barEngagementBin = echarts.init(document.getElementById('barEngagementBin'));
     charts.wordCloud = echarts.init(document.getElementById('wordCloud'));
 }
 
-function setStats(totals){
-    document.getElementById('totalViews').textContent = fmt(totals.views);
-    document.getElementById('totalLikes').textContent = fmt(totals.likes);
-    document.getElementById('totalComments').textContent = fmt(totals.comments);
-    document.getElementById('totalVideos').textContent = fmt(totals.videos);
+function setStats(viewStats){
+    document.getElementById('viewMean').textContent = fmt(Math.round(viewStats.mean));
+    document.getElementById('viewMedian').textContent = fmt(Math.round(viewStats.median));
+    document.getElementById('viewMax').textContent = fmt(viewStats.max);
+    document.getElementById('viewOver1m').textContent = fmt(viewStats.over1m);
 }
 
 function renderCharts(data) {
@@ -160,12 +207,23 @@ function renderCharts(data) {
     // Bar Categories
     const catNames = data.categories.map(c=>c.name);
     const catValues = data.categories.map(c=>c.value);
+    const catIds = data.categories.map(c=>c.id);
     charts.barCategories.setOption({
         backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis' },
-        grid: { left: 40, right: 20, top: 30, bottom: 40 },
-        xAxis: { type: 'category', data: catNames, axisLabel: { color: '#cbd5e1', rotate: 30 } },
-        yAxis: { type: 'value', axisLabel: { color: '#cbd5e1' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+        tooltip: { 
+            trigger: 'axis',
+            formatter: function(params) {
+                const param = params[0];
+                const idx = param.dataIndex;
+                const catId = catIds[idx];
+                const catName = catNames[idx];
+                const value = param.value;
+                return `${catName}<br/>ID: ${catId}<br/>Số lượng: ${value}`;
+            }
+        },
+        grid: { left: 70, right: 20, top: 30, bottom: 50 },
+        xAxis: { type: 'category', data: catNames, axisLabel: { color: '#cbd5e1', rotate: 30, margin: 16 } },
+        yAxis: { type: 'value', axisLabel: { color: '#cbd5e1', margin: 12 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
         series: [{
             type: 'bar',
             data: catValues,
@@ -179,7 +237,13 @@ function renderCharts(data) {
     // Pie Categories
     charts.pieCategories.setOption({
         backgroundColor: 'transparent',
-        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        tooltip: { 
+            trigger: 'item', 
+            formatter: function(params) {
+                const catId = catIds[params.dataIndex];
+                return `${params.name}<br/>ID: ${catId}<br/>Số lượng: ${params.value} (${params.percent}%)`;
+            }
+        },
         series: [{
             type: 'pie',
             radius: ['35%','70%'],
@@ -192,15 +256,16 @@ function renderCharts(data) {
         }]
     });
 
-    // Scatter Engagement
+    // Scatter View vs Like
     charts.scatterEngagement.setOption({
         backgroundColor: 'transparent',
-        tooltip: { formatter: (p)=>`Views: ${fmt(p.data[0])}<br/>Likes: ${fmt(p.data[1])}<br/>Comments: ${fmt(p.data[2])}` },
-        xAxis: { type: 'log', name: 'Views', axisLabel:{ color:'#cbd5e1' }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
-        yAxis: { type: 'log', name: 'Likes', axisLabel:{ color:'#cbd5e1' }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+        tooltip: { formatter: (p)=>`Views: ${fmt(p.data[0])}<br/>Likes: ${fmt(p.data[1])}` },
+        grid: { left: 70, right: 20, top: 40, bottom: 60 },
+        xAxis: { type: 'log', name: 'Views', axisLabel:{ color:'#cbd5e1', margin: 14 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+        yAxis: { type: 'log', name: 'Likes', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
         series: [{
             type: 'scatter',
-            symbolSize: (d)=> Math.max(4, Math.log(d[2]+2)),
+            symbolSize: (d)=> Math.max(4, Math.log((d[1]||0)+2)),
             data: data.scatter,
             itemStyle: { color: '#22d3ee' },
             emphasis: { itemStyle:{ color:'#06b6d4' } },
@@ -208,51 +273,172 @@ function renderCharts(data) {
         }]
     });
 
-    // Top Videos bar
-    charts.barTopVideos.setOption({
+    // ViewCount distribution (bins)
+    charts.barDistribution.setOption({
         backgroundColor: 'transparent',
         tooltip: { trigger: 'axis' },
-        legend: { data: ['Views','Likes','Comments'], textStyle:{ color:'#cbd5e1' } },
-        grid: { left: 140, right: 20, top: 30, bottom: 20 },
-        xAxis: { type: 'value', axisLabel:{ color:'#cbd5e1' }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
-        yAxis: { type: 'category', data: data.topVideos.titles, axisLabel:{ color:'#cbd5e1' } },
-        series: [
-            { name:'Views', type:'bar', data: data.topVideos.views, itemStyle:{ color:'#a855f7' } },
-            { name:'Likes', type:'bar', data: data.topVideos.likes, itemStyle:{ color:'#22d3ee' } },
-            { name:'Comments', type:'bar', data: data.topVideos.comments, itemStyle:{ color:'#f59e0b' } },
-        ]
-    });
-
-    // Engagement by bins (stacked)
-    charts.barEngagementBin.setOption({
-        backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis' },
-        legend: { data:['Avg Likes','Avg Comments','Số video'], textStyle:{ color:'#cbd5e1' } },
-        grid: { left: 40, right: 20, top: 30, bottom: 40 },
-        xAxis: { type: 'category', data: data.engagementByBin.bins, axisLabel:{ color:'#cbd5e1' } },
-        yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1' }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
-        series: [
-            { name:'Avg Likes', type:'bar', stack:'a', data: data.engagementByBin.avgLikes, itemStyle:{ color:'#22d3ee' } },
-            { name:'Avg Comments', type:'bar', stack:'a', data: data.engagementByBin.avgComments, itemStyle:{ color:'#06b6d4' } },
-            { name:'Số video', type:'line', data: data.engagementByBin.counts, itemStyle:{ color:'#f59e0b' } }
-        ]
-    });
-
-    // Word cloud
-    charts.wordCloud.setOption({
-        backgroundColor: 'transparent',
+        grid: { left: 70, right: 20, top: 40, bottom: 60 },
+        xAxis: { type: 'category', data: data.histogram.bins, axisLabel:{ color:'#cbd5e1', margin: 16 } },
+        yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
         series: [{
-            type: 'wordCloud',
-            gridSize: 8,
-            sizeRange: [12, 42],
-            rotationRange: [-45, 0, 45, 90],
-            shape: 'circle',
-            textStyle: {
-                color: ()=> colors[Math.floor(Math.random()*colors.length)]
-            },
-            data: data.wordCloud
+            name:'Số video',
+            type:'bar',
+            data: data.histogram.counts,
+            itemStyle:{ color:'#a855f7' },
+            showBackground:true,
+            backgroundStyle:{ color:'rgba(255,255,255,0.03)' }
         }]
     });
+
+    // Published time by hour
+    if (data.publishedTime && data.publishedTime.hours) {
+        const hourData = Object.entries(data.publishedTime.hours).map(([h, v]) => [parseInt(h), v]);
+        hourData.sort((a, b) => a[0] - b[0]);
+        charts.barPublishedHour.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', formatter: (p)=>`Giờ ${p.data[0]}:00<br/>Lượt xem TB: ${fmt(Math.round(p.data[1]))}` },
+            grid: { left: 70, right: 20, top: 40, bottom: 60 },
+            xAxis: { type: 'category', data: hourData.map(d=>`${d[0]}:00`), axisLabel:{ color:'#cbd5e1', margin: 12 } },
+            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            series: [{
+                type: 'bar',
+                data: hourData.map(d=>d[1]),
+                itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#22d3ee'},{offset:1,color:'#06b6d4'}]) },
+                showBackground: true,
+                backgroundStyle: { color: 'rgba(255,255,255,0.03)' }
+            }]
+        });
+    }
+
+    // Published time by weekday
+    if (data.publishedTime && data.publishedTime.weekdays) {
+        const weekdayData = Object.entries(data.publishedTime.weekdays);
+        charts.barPublishedWeekday.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', formatter: (p)=>`${p.data[0]}<br/>Lượt xem TB: ${fmt(Math.round(p.data[1]))}` },
+            grid: { left: 70, right: 20, top: 40, bottom: 60 },
+            xAxis: { type: 'category', data: weekdayData.map(d=>d[0]), axisLabel:{ color:'#cbd5e1', margin: 12 } },
+            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            series: [{
+                type: 'bar',
+                data: weekdayData.map(d=>d[1]),
+                itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#f59e0b'},{offset:1,color:'#ef4444'}]) },
+                showBackground: true,
+                backgroundStyle: { color: 'rgba(255,255,255,0.03)' }
+            }]
+        });
+    }
+
+    // Duration vs Views scatter
+    if (data.duration && data.duration.vs_views && data.duration.vs_views.length > 0) {
+        charts.scatterDurationViews.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { formatter: (p)=>`Thời lượng: ${Math.round(p.data[0]/60)} phút<br/>Views: ${fmt(p.data[1])}` },
+            grid: { left: 70, right: 20, top: 40, bottom: 60 },
+            xAxis: { type: 'value', name: 'Thời lượng (giây)', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+            yAxis: { type: 'log', name: 'Views', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+            series: [{
+                type: 'scatter',
+                symbolSize: (d)=> Math.max(4, Math.log((d[1]||0)+2)),
+                data: data.duration.vs_views,
+                itemStyle: { color: '#10b981' },
+                emphasis: { itemStyle:{ color:'#059669' } },
+                animationDuration: 1000
+            }]
+        });
+    }
+
+    // Duration distribution
+    if (data.duration && data.duration.distribution && data.duration.distribution.length > 0) {
+        charts.barDurationDist.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'item', formatter: '{b}: {c} video' },
+            grid: { left: 70, right: 20, top: 40, bottom: 60 },
+            xAxis: { type: 'category', data: data.duration.distribution.map(d=>d.name), axisLabel:{ color:'#cbd5e1', rotate: 30, margin: 16 } },
+            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            series: [{
+                type: 'bar',
+                data: data.duration.distribution.map(d=>d.value),
+                itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#10b981'},{offset:1,color:'#059669'}]) },
+                showBackground: true,
+                backgroundStyle: { color: 'rgba(255,255,255,0.03)' }
+            }]
+        });
+    }
+
+    // Top 10 Videos
+    if (data.topVideos && data.topVideos.length > 0 && charts.barTopVideos) {
+        try {
+            const videoTitles = data.topVideos.map((v, i) => `#${i+1} ${(v.title || '').substring(0, 40)}${(v.title || '').length > 40 ? '...' : ''}`);
+            charts.barTopVideos.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { 
+                trigger: 'axis',
+                formatter: function(params) {
+                    const idx = params[0].dataIndex;
+                    const v = data.topVideos[idx];
+                    return `${v.title}<br/>Kênh: ${v.channel}<br/>Views: ${fmt(v.viewCount)}<br/>Likes: ${fmt(v.likeCount)}<br/>Comments: ${fmt(v.commentCount)}`;
+                }
+            },
+            grid: { left: 200, right: 20, top: 20, bottom: 20 },
+            xAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            yAxis: { type: 'category', data: videoTitles, axisLabel:{ color:'#cbd5e1', margin: 8 } },
+            series: [{
+                type: 'bar',
+                data: data.topVideos.map(v=>v.viewCount),
+                itemStyle: { color: new echarts.graphic.LinearGradient(1,0,0,0,[{offset:0,color:'#a855f7'},{offset:1,color:'#6366f1'}]) },
+                showBackground: true,
+                backgroundStyle: { color: 'rgba(255,255,255,0.03)' },
+                label: { show: true, position: 'right', formatter: (p)=>fmt(p.value), color: '#cbd5e1' }
+            }]
+            });
+        } catch (e) {
+            console.error('Error rendering top videos chart:', e);
+        }
+    } else {
+        console.warn('Top videos data missing or chart not initialized:', { 
+            hasData: !!data.topVideos, 
+            dataLength: data.topVideos?.length || 0,
+            chartExists: !!charts.barTopVideos 
+        });
+    }
+
+    // Word Cloud
+    if (data.wordCloud && data.wordCloud.length > 0 && charts.wordCloud) {
+        try {
+            charts.wordCloud.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'item', formatter: '{b}: {c} lần' },
+            series: [{
+                type: 'wordCloud',
+                gridSize: 8,
+                sizeRange: [14, 50],
+                rotationRange: [-45, 0, 45, 90],
+                shape: 'circle',
+                textStyle: {
+                    color: function() {
+                        return colors[Math.floor(Math.random() * colors.length)];
+                    }
+                },
+                emphasis: {
+                    textStyle: {
+                        shadowBlur: 10,
+                        shadowColor: '#333'
+                    }
+                },
+                data: data.wordCloud
+            }]
+            });
+        } catch (e) {
+            console.error('Error rendering word cloud:', e);
+        }
+    } else {
+        console.warn('Word cloud data missing or chart not initialized:', { 
+            hasData: !!data.wordCloud, 
+            dataLength: data.wordCloud?.length || 0,
+            chartExists: !!charts.wordCloud 
+        });
+    }
 }
 
 async function loadData() {
@@ -264,14 +450,21 @@ async function loadData() {
         const res = await fetch('/api/dashboard-csv/');
         if (!res.ok) throw new Error('Không thể tải dữ liệu CSV');
         const data = await res.json();
-        setStats(data.totals);
+        console.log('Data received:', { 
+            topVideos: data.topVideos?.length || 0, 
+            wordCloud: data.wordCloud?.length || 0 
+        });
+        setStats(data.viewStats);
+        document.getElementById('corrLabel').textContent = `Hệ số tương quan: ${data.correlation.toFixed(3)}`;
         renderCharts(data);
     } catch (e) {
         errorBox.textContent = e.message;
         errorBox.classList.remove('hidden');
     } finally {
         loadingBar.classList.add('hidden');
-        Object.values(charts).forEach(c=> c && c.resize());
+        setTimeout(() => {
+            Object.values(charts).forEach(c=> c && c.resize());
+        }, 100);
     }
 }
 
@@ -281,8 +474,16 @@ window.addEventListener('resize', ()=> {
 
 document.getElementById('refreshBtn')?.addEventListener('click', loadData);
 
-initCharts();
-loadData();
+// Initialize charts after DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        loadData();
+    });
+} else {
+    initCharts();
+    loadData();
+}
 </script>
 {% endblock %}
 
