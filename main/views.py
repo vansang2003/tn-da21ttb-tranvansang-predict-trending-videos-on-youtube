@@ -12,7 +12,8 @@ import numpy as np
 # YouTube API Configuration - Sử dụng API key cố định
 YOUTUBE_API_KEY = 'AIzaSyCt8o0RjUnvbzwVQUuKhj9E1sa8glhKgdU' 
 MODEL_PATH = 'xgb_trending_model.pkl'
-PIPELINE_PATH = 'xgb_pipeline.pkl'
+SCALER_PATH = 'xgb_scaler.pkl'
+THRESHOLDS_PATH = 'xgb_thresholds.pkl'
 FEATURES_PATH = 'selected_features.txt'
 
 def extract_video_id(url):
@@ -289,42 +290,47 @@ def get_dashboard_data(api_key=None):
         }
 
 def extract_features(info):
-    """Extract features from video info for ML model"""
+    """Extract features from video info for ML model - chỉ 3 đặc trưng: likeCount, viewCount, commentCount"""
     if not info:
         return None
     
-    # Text preprocessing
-    title_len = len(info.get('title', ''))
-    desc_len = len(info.get('description', ''))
-    desc_words = len(info.get('description', '').split())
-    tag_count = len(info.get('tags', '').split(',')) if info.get('tags') else 0
-    
-    # Numeric features
+    # Chỉ lấy 3 đặc trưng đã được train: likeCount, viewCount, commentCount
     view_count = info.get('viewCount', 0)
     like_count = info.get('likeCount', 0)
     comment_count = info.get('commentCount', 0)
-    category_id = int(info.get('categoryId', 0))
     
     return {
-        'title_len': title_len,
-        'desc_len': desc_len,
-        'desc_words': desc_words,
-        'tag_count': tag_count,
-        'categoryId': category_id,
         'viewCount': view_count,
         'likeCount': like_count,
         'commentCount': comment_count
     }
 
 def load_model_bundle():
-    """Load trained model, scaler and selected feature names."""
-    if not (os.path.exists(MODEL_PATH) and os.path.exists(PIPELINE_PATH) and os.path.exists(FEATURES_PATH)):
-        return None, None, None
+    """Load trained model, scaler, thresholds and selected feature names."""
+    if not (os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH) and os.path.exists(FEATURES_PATH)):
+        return None, None, None, None
+    
     model = joblib.load(MODEL_PATH)
-    scaler = joblib.load(PIPELINE_PATH)
+    scaler = joblib.load(SCALER_PATH)
+    
+    # Load thresholds nếu có, nếu không thì dùng 0.5 mặc định
+    threshold = 0.5
+    if os.path.exists(THRESHOLDS_PATH):
+        try:
+            thresholds_data = joblib.load(THRESHOLDS_PATH)
+            # Nếu thresholds_data là dict, lấy threshold từ key phù hợp
+            if isinstance(thresholds_data, dict):
+                # Có thể có các key như 'optimal_threshold', 'threshold', 'best_threshold'
+                threshold = thresholds_data.get('optimal_threshold', thresholds_data.get('threshold', thresholds_data.get('best_threshold', 0.5)))
+            elif isinstance(thresholds_data, (int, float)):
+                threshold = float(thresholds_data)
+        except Exception as e:
+            print(f"Warning: Không thể load thresholds, sử dụng 0.5 mặc định: {e}")
+    
     with open(FEATURES_PATH, 'r', encoding='utf-8') as f:
         selected_features = [line.strip() for line in f if line.strip()]
-    return model, scaler, selected_features
+    
+    return model, scaler, selected_features, threshold
 
 def index(request):
     """Dashboard view with real YouTube data"""
@@ -359,11 +365,11 @@ def predict(request):
                     error = "Không thể lấy thông tin video. Kiểm tra lại API key và URL"
                 else:
                     try:
-                        model, scaler, selected_features = load_model_bundle()
+                        model, scaler, selected_features, threshold = load_model_bundle()
                         if not (model and scaler and selected_features):
-                            error = "Model chưa được huấn luyện đầy đủ (model/scaler/features). Vui lòng chạy train_xgboost.py trước"
+                            error = "Model chưa được huấn luyện đầy đủ (model/scaler/features). Vui lòng train model trước"
                         else:
-                            # Extract features
+                            # Extract features - chỉ 3 đặc trưng: likeCount, viewCount, commentCount
                             raw = extract_features(video_info)
                             if raw:
                                 # Sắp xếp features đúng thứ tự đã dùng khi train
@@ -372,56 +378,55 @@ def predict(request):
                                 # Scale & predict
                                 arr_scaled = scaler.transform(arr)
                                 proba = float(model.predict_proba(arr_scaled)[0][1]) if hasattr(model, 'predict_proba') else float(model.predict(arr_scaled)[0])
-                                pred = int(proba >= 0.5)
+                                # Sử dụng threshold từ file xgb_thresholds.pkl thay vì 0.5 cố định
+                                pred = int(proba >= threshold)
                                 score = int(proba * 100)
 
                                 
                                 ups_list = []
                                 downs_list = []
+                                # Chỉ phân tích 3 đặc trưng: viewCount, likeCount, commentCount
                                 # viewCount
                                 if 'viewCount' in raw:
                                     v = raw['viewCount']
-                                    if v >= 100000:
-                                        ups_list.append('Lượt xem cao (>=100K)')
+                                    if v >= 1000000:
+                                        ups_list.append(f'Lượt xem rất cao ({v/1000000:.1f}M lượt)')
+                                    elif v >= 100000:
+                                        ups_list.append(f'Lượt xem cao ({v/1000:.0f}K lượt)')
                                     elif v < 10000:
-                                        downs_list.append('Lượt xem thấp (<10K)')
+                                        downs_list.append(f'Lượt xem thấp ({v:,} lượt)')
+                                
+                                # likeCount
+                                if 'likeCount' in raw:
+                                    l = raw['likeCount']
+                                    if l >= 50000:
+                                        ups_list.append(f'Lượt like cao ({l/1000:.0f}K lượt)')
+                                    elif l < 100:
+                                        downs_list.append(f'Lượt like thấp ({l} lượt)')
+                                
                                 # likeCount ratio
-                                if 'likeCount' in raw and 'viewCount' in raw:
-                                    like_rate = (raw['likeCount'] / max(raw['viewCount'], 1)) * 100
+                                if 'likeCount' in raw and 'viewCount' in raw and raw['viewCount'] > 0:
+                                    like_rate = (raw['likeCount'] / raw['viewCount']) * 100
                                     if like_rate >= 5:
-                                        ups_list.append(f'Tỷ lệ like tốt (~{like_rate:.1f}%)')
+                                        ups_list.append(f'Tỷ lệ like tốt ({like_rate:.2f}%)')
                                     elif like_rate < 1:
-                                        downs_list.append(f'Tỷ lệ like thấp (~{like_rate:.1f}%)')
+                                        downs_list.append(f'Tỷ lệ like thấp ({like_rate:.2f}%)')
+                                
+                                # commentCount
+                                if 'commentCount' in raw:
+                                    c = raw['commentCount']
+                                    if c >= 1000:
+                                        ups_list.append(f'Lượt bình luận cao ({c:,} lượt)')
+                                    elif c < 10:
+                                        downs_list.append(f'Lượt bình luận thấp ({c} lượt)')
+                                
                                 # commentCount ratio
-                                if 'commentCount' in raw and 'viewCount' in raw:
-                                    cmt_rate = (raw['commentCount'] / max(raw['viewCount'], 1)) * 100
+                                if 'commentCount' in raw and 'viewCount' in raw and raw['viewCount'] > 0:
+                                    cmt_rate = (raw['commentCount'] / raw['viewCount']) * 100
                                     if cmt_rate >= 1:
-                                        ups_list.append(f'Tỷ lệ bình luận tốt (~{cmt_rate:.2f}%)')
+                                        ups_list.append(f'Tỷ lệ bình luận tốt ({cmt_rate:.2f}%)')
                                     elif cmt_rate < 0.1:
-                                        downs_list.append(f'Tỷ lệ bình luận thấp (~{cmt_rate:.2f}%)')
-                                # tag_count
-                                if 'tag_count' in raw:
-                                    t = raw['tag_count']
-                                    if t >= 10:
-                                        ups_list.append('Nhiều thẻ tag (>=10)')
-                                    elif t <= 2:
-                                        downs_list.append('Ít thẻ tag (<=2)')
-                                # title_len
-                                if 'title_len' in raw:
-                                    tl = raw['title_len']
-                                    if 20 <= tl <= 70:
-                                        ups_list.append('Tiêu đề độ dài hợp lý (20-70)')
-                                    elif tl < 15:
-                                        downs_list.append('Tiêu đề quá ngắn (<15)')
-                                    elif tl > 100:
-                                        downs_list.append('Tiêu đề quá dài (>100)')
-                                # desc_words
-                                if 'desc_words' in raw:
-                                    dw = raw['desc_words']
-                                    if dw >= 50:
-                                        ups_list.append('Mô tả chi tiết (>=50 từ)')
-                                    elif dw < 10:
-                                        downs_list.append('Mô tả sơ sài (<10 từ)')
+                                        downs_list.append(f'Tỷ lệ bình luận thấp ({cmt_rate:.2f}%)')
 
                                 ups_list = ups_list[:3]
                                 downs_list = downs_list[:3]
