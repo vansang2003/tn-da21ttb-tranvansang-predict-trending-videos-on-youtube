@@ -23,7 +23,7 @@
         <div class="rounded-2xl bg-gradient-to-br from-fuchsia-600/20 to-indigo-600/20 border border-white/10 p-5">
             <div class="text-sm text-slate-300">View trung bình</div>
             <div class="mt-2 text-2xl font-bold" id="viewMean">—</div>
-            <div class="mt-1 text-xs text-slate-400">Câu hỏi 1: phân phối lượt xem</div>
+            <div class="mt-1 text-xs text-slate-400">Phân phối lượt xem</div>
         </div>
         <div class="rounded-2xl bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-white/10 p-5">
             <div class="text-sm text-slate-300">View trung vị</div>
@@ -55,7 +55,7 @@
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold">Phân phối lượt xem (ViewCount)</h2>
-                <span class="text-xs text-slate-400">Câu hỏi 1</span>
+                <span class="text-xs text-slate-400">Biểu đồ cột</span>
             </div>
             <div id="barEngagementBin" class="h-[360px] mt-2"></div>
         </div>
@@ -84,16 +84,26 @@
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold">Thời gian đăng video theo giờ</h2>
-                <span class="text-xs text-slate-400">Lượt xem trung bình</span>
+                <span class="text-xs text-slate-400">Biểu đồ cột</span>
             </div>
             <div id="barPublishedHour" class="h-[360px] mt-2"></div>
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold">Thời gian đăng video theo ngày trong tuần</h2>
-                <span class="text-xs text-slate-400">Lượt xem trung bình</span>
+                <span class="text-xs text-slate-400">Biểu đồ cột</span>
             </div>
             <div id="barPublishedWeekday" class="h-[360px] mt-2"></div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">Từ khóa nổi bật (Tags)</h2>
+                <span class="text-xs text-slate-400">Word Cloud</span>
+            </div>
+            <div id="wordCloudTags" class="h-[360px] mt-2"></div>
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
@@ -108,27 +118,10 @@
         <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold">Phân bố thời lượng video</h2>
-                <span class="text-xs text-slate-400">Histogram</span>
+                <span class="text-xs text-slate-400">Biểu đồ cột</span>
             </div>
             <div id="barDurationDist" class="h-[360px] mt-2"></div>
         </div>
-    </div>
-</section>
-
-<section class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold">Top 10 video có lượt xem cao nhất</h2>
-            <span class="text-xs text-slate-400">Từ tập dữ liệu</span>
-        </div>
-        <div id="barTopVideos" class="h-[500px] mt-2"></div>
-    </div>
-    <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold">Từ khóa nổi bật</h2>
-            <span class="text-xs text-slate-400">Word Cloud</span>
-        </div>
-        <div id="wordCloud" class="h-[500px] mt-2"></div>
     </div>
 </section>
 
@@ -177,8 +170,7 @@ const charts = {
     barPublishedWeekday: null,
     scatterDurationViews: null,
     barDurationDist: null,
-    barTopVideos: null,
-    wordCloud: null,
+    wordCloudTags: null,
 };
 
 function initCharts() {
@@ -190,8 +182,7 @@ function initCharts() {
     charts.barPublishedWeekday = echarts.init(document.getElementById('barPublishedWeekday'));
     charts.scatterDurationViews = echarts.init(document.getElementById('scatterDurationViews'));
     charts.barDurationDist = echarts.init(document.getElementById('barDurationDist'));
-    charts.barTopVideos = echarts.init(document.getElementById('barTopVideos'));
-    charts.wordCloud = echarts.init(document.getElementById('wordCloud'));
+    charts.wordCloudTags = echarts.init(document.getElementById('wordCloudTags'));
 }
 
 function setStats(viewStats){
@@ -222,8 +213,8 @@ function renderCharts(data) {
             }
         },
         grid: { left: 70, right: 20, top: 30, bottom: 50 },
-        xAxis: { type: 'category', data: catNames, axisLabel: { color: '#cbd5e1', rotate: 30, margin: 16 } },
-        yAxis: { type: 'value', axisLabel: { color: '#cbd5e1', margin: 12 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+        xAxis: { type: 'category', name: 'Danh mục', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, data: catNames, axisLabel: { color: '#cbd5e1', rotate: 30, margin: 16 } },
+        yAxis: { type: 'value', name: 'Số lượng video', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel: { color: '#cbd5e1', margin: 12 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
         series: [{
             type: 'bar',
             data: catValues,
@@ -261,8 +252,8 @@ function renderCharts(data) {
         backgroundColor: 'transparent',
         tooltip: { formatter: (p)=>`Views: ${fmt(p.data[0])}<br/>Likes: ${fmt(p.data[1])}` },
         grid: { left: 70, right: 20, top: 40, bottom: 60 },
-        xAxis: { type: 'log', name: 'Views', axisLabel:{ color:'#cbd5e1', margin: 14 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
-        yAxis: { type: 'log', name: 'Likes', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+        xAxis: { type: 'log', name: 'Lượt xem', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 14 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+        yAxis: { type: 'log', name: 'Lượt thích', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
         series: [{
             type: 'scatter',
             symbolSize: (d)=> Math.max(4, Math.log((d[1]||0)+2)),
@@ -278,8 +269,8 @@ function renderCharts(data) {
         backgroundColor: 'transparent',
         tooltip: { trigger: 'axis' },
         grid: { left: 70, right: 20, top: 40, bottom: 60 },
-        xAxis: { type: 'category', data: data.histogram.bins, axisLabel:{ color:'#cbd5e1', margin: 16 } },
-        yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+        xAxis: { type: 'category', name: 'Khoảng lượt xem', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, data: data.histogram.bins, axisLabel:{ color:'#cbd5e1', margin: 16 } },
+        yAxis: { type: 'value', name: 'Số lượng video', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
         series: [{
             name:'Số video',
             type:'bar',
@@ -298,8 +289,8 @@ function renderCharts(data) {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', formatter: (p)=>`Giờ ${p.data[0]}:00<br/>Lượt xem TB: ${fmt(Math.round(p.data[1]))}` },
             grid: { left: 70, right: 20, top: 40, bottom: 60 },
-            xAxis: { type: 'category', data: hourData.map(d=>`${d[0]}:00`), axisLabel:{ color:'#cbd5e1', margin: 12 } },
-            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            xAxis: { type: 'category', name: 'Giờ trong ngày', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, data: hourData.map(d=>`${d[0]}:00`), axisLabel:{ color:'#cbd5e1', margin: 12 } },
+            yAxis: { type: 'value', name: 'Lượt xem trung bình', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
             series: [{
                 type: 'bar',
                 data: hourData.map(d=>d[1]),
@@ -317,8 +308,8 @@ function renderCharts(data) {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', formatter: (p)=>`${p.data[0]}<br/>Lượt xem TB: ${fmt(Math.round(p.data[1]))}` },
             grid: { left: 70, right: 20, top: 40, bottom: 60 },
-            xAxis: { type: 'category', data: weekdayData.map(d=>d[0]), axisLabel:{ color:'#cbd5e1', margin: 12 } },
-            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            xAxis: { type: 'category', name: 'Ngày trong tuần', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, data: weekdayData.map(d=>d[0]), axisLabel:{ color:'#cbd5e1', margin: 12 } },
+            yAxis: { type: 'value', name: 'Lượt xem trung bình', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
             series: [{
                 type: 'bar',
                 data: weekdayData.map(d=>d[1]),
@@ -335,8 +326,8 @@ function renderCharts(data) {
             backgroundColor: 'transparent',
             tooltip: { formatter: (p)=>`Thời lượng: ${Math.round(p.data[0]/60)} phút<br/>Views: ${fmt(p.data[1])}` },
             grid: { left: 70, right: 20, top: 40, bottom: 60 },
-            xAxis: { type: 'value', name: 'Thời lượng (giây)', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
-            yAxis: { type: 'log', name: 'Views', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+            xAxis: { type: 'value', name: 'Thời lượng (giây)', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
+            yAxis: { type: 'log', name: 'Lượt xem', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)'} } },
             series: [{
                 type: 'scatter',
                 symbolSize: (d)=> Math.max(4, Math.log((d[1]||0)+2)),
@@ -354,8 +345,8 @@ function renderCharts(data) {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'item', formatter: '{b}: {c} video' },
             grid: { left: 70, right: 20, top: 40, bottom: 60 },
-            xAxis: { type: 'category', data: data.duration.distribution.map(d=>d.name), axisLabel:{ color:'#cbd5e1', rotate: 30, margin: 16 } },
-            yAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
+            xAxis: { type: 'category', name: 'Khoảng thời lượng', nameLocation: 'middle', nameGap: 30, nameTextStyle: { color: '#cbd5e1' }, data: data.duration.distribution.map(d=>d.name), axisLabel:{ color:'#cbd5e1', rotate: 30, margin: 16 } },
+            yAxis: { type: 'value', name: 'Số lượng video', nameLocation: 'middle', nameGap: 50, nameTextStyle: { color: '#cbd5e1' }, axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
             series: [{
                 type: 'bar',
                 data: data.duration.distribution.map(d=>d.value),
@@ -366,78 +357,35 @@ function renderCharts(data) {
         });
     }
 
-    // Top 10 Videos
-    if (data.topVideos && data.topVideos.length > 0 && charts.barTopVideos) {
+    // Word Cloud Tags
+    if (data.wordCloud && data.wordCloud.length > 0 && charts.wordCloudTags) {
         try {
-            const videoTitles = data.topVideos.map((v, i) => `#${i+1} ${(v.title || '').substring(0, 40)}${(v.title || '').length > 40 ? '...' : ''}`);
-            charts.barTopVideos.setOption({
-            backgroundColor: 'transparent',
-            tooltip: { 
-                trigger: 'axis',
-                formatter: function(params) {
-                    const idx = params[0].dataIndex;
-                    const v = data.topVideos[idx];
-                    return `${v.title}<br/>Kênh: ${v.channel}<br/>Views: ${fmt(v.viewCount)}<br/>Likes: ${fmt(v.likeCount)}<br/>Comments: ${fmt(v.commentCount)}`;
-                }
-            },
-            grid: { left: 200, right: 20, top: 20, bottom: 20 },
-            xAxis: { type: 'value', axisLabel:{ color:'#cbd5e1', margin: 12 }, splitLine:{ lineStyle:{ color:'rgba(255,255,255,0.06)' } } },
-            yAxis: { type: 'category', data: videoTitles, axisLabel:{ color:'#cbd5e1', margin: 8 } },
-            series: [{
-                type: 'bar',
-                data: data.topVideos.map(v=>v.viewCount),
-                itemStyle: { color: new echarts.graphic.LinearGradient(1,0,0,0,[{offset:0,color:'#a855f7'},{offset:1,color:'#6366f1'}]) },
-                showBackground: true,
-                backgroundStyle: { color: 'rgba(255,255,255,0.03)' },
-                label: { show: true, position: 'right', formatter: (p)=>fmt(p.value), color: '#cbd5e1' }
-            }]
-            });
-        } catch (e) {
-            console.error('Error rendering top videos chart:', e);
-        }
-    } else {
-        console.warn('Top videos data missing or chart not initialized:', { 
-            hasData: !!data.topVideos, 
-            dataLength: data.topVideos?.length || 0,
-            chartExists: !!charts.barTopVideos 
-        });
-    }
-
-    // Word Cloud
-    if (data.wordCloud && data.wordCloud.length > 0 && charts.wordCloud) {
-        try {
-            charts.wordCloud.setOption({
-            backgroundColor: 'transparent',
-            tooltip: { trigger: 'item', formatter: '{b}: {c} lần' },
-            series: [{
-                type: 'wordCloud',
-                gridSize: 8,
-                sizeRange: [14, 50],
-                rotationRange: [-45, 0, 45, 90],
-                shape: 'circle',
-                textStyle: {
-                    color: function() {
-                        return colors[Math.floor(Math.random() * colors.length)];
-                    }
-                },
-                emphasis: {
+            charts.wordCloudTags.setOption({
+                backgroundColor: 'transparent',
+                tooltip: { trigger: 'item', formatter: '{b}: {c} lần' },
+                series: [{
+                    type: 'wordCloud',
+                    gridSize: 8,
+                    sizeRange: [14, 50],
+                    rotationRange: [-45, 0, 45, 90],
+                    shape: 'circle',
                     textStyle: {
-                        shadowBlur: 10,
-                        shadowColor: '#333'
-                    }
-                },
-                data: data.wordCloud
-            }]
+                        color: function() {
+                            return colors[Math.floor(Math.random() * colors.length)];
+                        }
+                    },
+                    emphasis: {
+                        textStyle: {
+                            shadowBlur: 10,
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: data.wordCloud
+                }]
             });
         } catch (e) {
-            console.error('Error rendering word cloud:', e);
+            console.error('Error rendering word cloud tags:', e);
         }
-    } else {
-        console.warn('Word cloud data missing or chart not initialized:', { 
-            hasData: !!data.wordCloud, 
-            dataLength: data.wordCloud?.length || 0,
-            chartExists: !!charts.wordCloud 
-        });
     }
 }
 
@@ -450,10 +398,6 @@ async function loadData() {
         const res = await fetch('/api/dashboard-csv/');
         if (!res.ok) throw new Error('Không thể tải dữ liệu CSV');
         const data = await res.json();
-        console.log('Data received:', { 
-            topVideos: data.topVideos?.length || 0, 
-            wordCloud: data.wordCloud?.length || 0 
-        });
         setStats(data.viewStats);
         document.getElementById('corrLabel').textContent = `Hệ số tương quan: ${data.correlation.toFixed(3)}`;
         renderCharts(data);
